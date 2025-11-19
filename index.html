@@ -278,37 +278,7 @@
       font-size: 16px;
       font-weight: 600;
       color: var(--iwmi-navy);
-      backface-visibility: hidden;
-      transition: transform 0.6s, box-shadow 0.3s;
-      transform-style: preserve-3d;
-    }
-
-    #cardDeck .card-visual.flipped {
-      transform: rotateY(180deg);
-    }
-
-    #cardDeck .card-visual .card-front,
-    #cardDeck .card-visual .card-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 12px;
-    }
-
-    #cardDeck .card-visual .card-front {
-      background: linear-gradient(135deg, #e0e8ef, #f5f7fa);
-      color: var(--iwmi-navy);
-    }
-
-    #cardDeck .card-visual .card-back {
-      background: linear-gradient(135deg, var(--iwmi-blue), var(--iwmi-teal));
-      transform: rotateY(180deg);
-      color: white;
-      font-size: 24px;
+      transition: transform 0.6s, box-shadow 0.3s, opacity 0.6s;
     }
 
     .winner-card {
@@ -551,19 +521,9 @@ Charlie"></textarea>
     teamMembers.forEach((name, index) => {
       const card = document.createElement('div');
       card.className = 'card-visual';
+      card.textContent = name;
       card.style.zIndex = teamMembers.length - index;
       card.style.transform = `translateZ(-${index * 2}px)`;
-
-      const cardFront = document.createElement('div');
-      cardFront.className = 'card-front';
-      cardFront.textContent = name;
-
-      const cardBack = document.createElement('div');
-      cardBack.className = 'card-back';
-      cardBack.textContent = '?';
-
-      card.appendChild(cardFront);
-      card.appendChild(cardBack);
       cardDeck.appendChild(card);
     });
 
@@ -589,23 +549,26 @@ Charlie"></textarea>
     const shuffledMembers = [...teamMembers].sort(() => Math.random() - 0.5);
     const winners = shuffledMembers.slice(0, 3);
 
+    const winnerIndices = winners.map(winner => teamMembers.indexOf(winner));
+
     cards.forEach((card, index) => {
       setTimeout(() => {
-        card.style.transform = `translateX(${(index - (cards.length - 1) / 2) * 160}px) translateZ(0px) rotateY(0deg)`;
-      }, index * 100);
+        const isWinner = winners.includes(card.textContent);
+        if (isWinner) {
+          card.style.transform = `translateX(${(winnerIndices.indexOf(index) - 1) * 160}px) scale(1.1)`;
+          card.style.boxShadow = '0 10px 30px rgba(0, 150, 214, 0.4)';
+        } else {
+          const randomX = (Math.random() - 0.5) * 1000;
+          const randomY = (Math.random() - 0.5) * 1000;
+          card.style.transform = `translateX(${randomX}px) translateY(${randomY}px) rotate(${randomX / 2}deg)`;
+          card.style.opacity = '0';
+        }
+      }, index * 150);
     });
 
     setTimeout(() => {
-      const winnerCards = cards.filter(card => winners.includes(card.querySelector('.card-front').textContent));
-      winnerCards.forEach((card, index) => {
-        setTimeout(() => {
-          card.classList.add('flipped');
-          card.style.boxShadow = '0 10px 30px rgba(0, 150, 214, 0.4)';
-          card.style.transform = `${card.style.transform} scale(1.1)`;
-        }, index * 500);
-      });
-      setTimeout(() => revealWinners(winners), winnerCards.length * 500 + 500);
-    }, cards.length * 100 + 500);
+      revealWinners(winners);
+    }, cards.length * 150 + 500);
   }
 
   function revealWinners(winners) {
