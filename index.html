@@ -257,45 +257,58 @@
       box-shadow: none;
     }
 
-    .shuffle-container {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin: 20px 0 12px;
-    }
-
-    .shuffle-card {
-      background: #ffffff;
-      padding: 12px 16px;
-      border-radius: 14px;
-      box-shadow: var(--shadow-sm);
-      min-width: 120px;
-      text-align: center;
-      font-weight: 600;
-      color: var(--iwmi-navy);
-      border: 2px solid rgba(0,150,214,0.18);
-      transition: all 0.25s ease;
-      font-size: 14px;
-    }
-
-    .shuffle-card.active {
-      border-color: var(--iwmi-blue);
-      box-shadow: 0 8px 25px rgba(0,150,214,0.3);
-      transform: scale(1.05);
-    }
-
-    .countdown {
-      font-size: 32px;
-      font-weight: 800;
-      color: var(--iwmi-blue);
-      margin-bottom: 6px;
-    }
 
     .selection-animation {
       margin: 20px auto 0;
       max-width: 700px;
       display: none;
+    }
+
+    #cardDeck .card-visual {
+      position: absolute;
+      width: 150px;
+      height: 210px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f5f7fa, #e0e8ef);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid #d1d9e6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--iwmi-navy);
+      backface-visibility: hidden;
+      transition: transform 0.6s, box-shadow 0.3s;
+      transform-style: preserve-3d;
+    }
+
+    #cardDeck .card-visual.flipped {
+      transform: rotateY(180deg);
+    }
+
+    #cardDeck .card-visual .card-front,
+    #cardDeck .card-visual .card-back {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 12px;
+    }
+
+    #cardDeck .card-visual .card-front {
+      background: linear-gradient(135deg, #e0e8ef, #f5f7fa);
+      color: var(--iwmi-navy);
+    }
+
+    #cardDeck .card-visual .card-back {
+      background: linear-gradient(135deg, var(--iwmi-blue), var(--iwmi-teal));
+      transform: rotateY(180deg);
+      color: white;
+      font-size: 24px;
     }
 
     .winner-card {
@@ -398,9 +411,8 @@ Charlie"></textarea>
       Start Selection
     </button>
 
-    <div id="shuffleAnimation" style="display:none;">
-      <div class="countdown" id="countdown">5</div>
-      <div class="shuffle-container" id="shuffleContainer"></div>
+    <div id="cardDeckAnimation" style="display: none; perspective: 1000px; margin-bottom: 20px;">
+      <div id="cardDeck" style="position: relative; width: 150px; height: 210px; margin: 0 auto; transform-style: preserve-3d; transition: transform 0.5s;"></div>
     </div>
 
     <div id="selectionAnimation" class="selection-animation">
@@ -433,9 +445,8 @@ Charlie"></textarea>
   const teamCount          = document.getElementById('teamCount');
 
   const startSelectionBtn  = document.getElementById('startSelectionBtn');
-  const shuffleAnimation   = document.getElementById('shuffleAnimation');
-  const shuffleContainer   = document.getElementById('shuffleContainer');
-  const countdownElement   = document.getElementById('countdown');
+  const cardDeckAnimation  = document.getElementById('cardDeckAnimation');
+  const cardDeck           = document.getElementById('cardDeck');
   const selectionAnimation = document.getElementById('selectionAnimation');
 
   const notification       = document.getElementById('notification');
@@ -526,64 +537,78 @@ Charlie"></textarea>
   }
 
   function startSelection() {
-    // Make sure we always use what’s currently in the box
     saveTeam();
-
     if (teamMembers.length < 3) {
       notify('Need at least 3 names');
       return;
     }
 
-    // Reset UI
     selectionAnimation.style.display = 'none';
-    shuffleAnimation.style.display = 'block';
-    shuffleContainer.innerHTML = '';
+    cardDeckAnimation.style.display = 'block';
+    cardDeck.innerHTML = '';
     startSelectionBtn.disabled = true;
-    countdownElement.textContent = '5';
 
-    // Create cards
-    teamMembers.forEach(name => {
+    teamMembers.forEach((name, index) => {
       const card = document.createElement('div');
-      card.className = 'shuffle-card';
-      card.textContent = name;
-      shuffleContainer.appendChild(card);
+      card.className = 'card-visual';
+      card.style.zIndex = teamMembers.length - index;
+      card.style.transform = `translateZ(-${index * 2}px)`;
+
+      const cardFront = document.createElement('div');
+      cardFront.className = 'card-front';
+      cardFront.textContent = name;
+
+      const cardBack = document.createElement('div');
+      cardBack.className = 'card-back';
+      cardBack.textContent = '?';
+
+      card.appendChild(cardFront);
+      card.appendChild(cardBack);
+      cardDeck.appendChild(card);
     });
 
-    const cards = document.querySelectorAll('.shuffle-card');
+    setTimeout(() => shuffleCards(), 500);
+  }
 
-    let countdown = 5;
-    let shuffleInterval;
-
-    const countdownInterval = setInterval(() => {
-      countdown--;
-      countdownElement.textContent = countdown;
-      if (countdown <= 0) {
-        clearInterval(countdownInterval);
-      }
-    }, 1000);
-
-    shuffleInterval = setInterval(() => {
-      cards.forEach(card => card.classList.remove('active'));
-
-      const indices = [];
-      while (indices.length < Math.min(3, cards.length)) {
-        const r = Math.floor(Math.random() * cards.length);
-        if (!indices.includes(r)) indices.push(r);
-      }
-      indices.forEach(i => cards[i].classList.add('active'));
-    }, 150);
+  function shuffleCards() {
+    const cards = Array.from(document.querySelectorAll('#cardDeck .card-visual'));
+    let angle = 0;
+    const shuffleInterval = setInterval(() => {
+      angle += 20;
+      cardDeck.style.transform = `rotateY(${angle}deg) rotateZ(${angle / 5}deg)`;
+    }, 50);
 
     setTimeout(() => {
       clearInterval(shuffleInterval);
-      shuffleAnimation.style.display = 'none';
-      revealWinners();
-    }, 5000);
+      cardDeck.style.transform = 'rotateY(0deg) rotateZ(0deg)';
+      setTimeout(() => dealCards(cards), 500);
+    }, 2500);
   }
 
-  function revealWinners() {
-    const shuffled = [...teamMembers].sort(() => Math.random() - 0.5);
-    const winners = shuffled.slice(0, 3);
+  function dealCards(cards) {
+    const shuffledMembers = [...teamMembers].sort(() => Math.random() - 0.5);
+    const winners = shuffledMembers.slice(0, 3);
 
+    cards.forEach((card, index) => {
+      setTimeout(() => {
+        card.style.transform = `translateX(${(index - (cards.length - 1) / 2) * 160}px) translateZ(0px) rotateY(0deg)`;
+      }, index * 100);
+    });
+
+    setTimeout(() => {
+      const winnerCards = cards.filter(card => winners.includes(card.querySelector('.card-front').textContent));
+      winnerCards.forEach((card, index) => {
+        setTimeout(() => {
+          card.classList.add('flipped');
+          card.style.boxShadow = '0 10px 30px rgba(0, 150, 214, 0.4)';
+          card.style.transform = `${card.style.transform} scale(1.1)`;
+        }, index * 500);
+      });
+      setTimeout(() => revealWinners(winners), winnerCards.length * 500 + 500);
+    }, cards.length * 100 + 500);
+  }
+
+  function revealWinners(winners) {
     document.getElementById('winner1').textContent = winners[0];
     document.getElementById('winner2').textContent = winners[1];
     document.getElementById('winner3').textContent = winners[2];
