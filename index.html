@@ -262,6 +262,15 @@
       margin: 20px auto 0;
       max-width: 700px;
       display: none;
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 600px) {
+      .selection-animation {
+        grid-template-columns: 1fr;
+      }
     }
 
     #cardDeck .card-visual {
@@ -307,6 +316,17 @@
       font-weight: 800;
       color: var(--iwmi-navy);
       margin-top: 4px;
+      animation: none;
+    }
+
+    .winner-card.revealed .winner-name {
+      animation: celebration 0.5s ease-in-out;
+    }
+
+    @keyframes celebration {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
     }
 
     .notification {
@@ -346,6 +366,8 @@
   </div>
 </header>
 
+<audio id="celebrationSound" src=""></audio>
+
 <div class="container">
   <!-- Team Editor Box ONLY -->
   <div class="card">
@@ -373,8 +395,8 @@ Charlie"></textarea>
   <div class="card selection-area">
     <h2>Random Presenter Selection</h2>
     <p class="desc" style="font-size:15px; max-width:520px; margin:0 auto 16px;">
-      Picks 3 random people from the list above for:<br>
-      Serious Presentation • Semi-Serious • New Tool / Paper Demo
+      Picks 4 random people from the list above for the following roles:<br>
+      Organize the meeting • Serious • Semi-Serious • New Tool
     </p>
 
     <button class="start-btn" id="startSelectionBtn">
@@ -387,15 +409,19 @@ Charlie"></textarea>
 
     <div id="selectionAnimation" class="selection-animation">
       <div class="winner-card">
-        <div class="role-badge">Serious Presentation</div>
+        <div class="role-badge">Organize the meeting</div>
+        <div class="winner-name" id="winner0">...</div>
+      </div>
+      <div class="winner-card">
+        <div class="role-badge">Serious</div>
         <div class="winner-name" id="winner1">...</div>
       </div>
       <div class="winner-card">
-        <div class="role-badge">Semi-Serious Presentation</div>
+        <div class="role-badge">Semi-Serious</div>
         <div class="winner-name" id="winner2">...</div>
       </div>
       <div class="winner-card">
-        <div class="role-badge">New Tool / Paper Demo</div>
+        <div class="role-badge">New Tool</div>
         <div class="winner-name" id="winner3">...</div>
       </div>
     </div>
@@ -441,7 +467,7 @@ Charlie"></textarea>
   function updateCount() {
     const n = teamMembers.length;
     teamCount.textContent = n === 1 ? '1 name' : `${n} names`;
-    startSelectionBtn.disabled = n < 3;
+    startSelectionBtn.disabled = n < 4;
   }
 
   function saveTeam() {
@@ -508,104 +534,63 @@ Charlie"></textarea>
 
   function startSelection() {
     saveTeam();
-    if (teamMembers.length < 3) {
-      notify('Need at least 3 names');
+    if (teamMembers.length < 4) {
+      notify('Need at least 4 names');
       return;
     }
 
-    selectionAnimation.style.display = 'none';
-    cardDeckAnimation.style.display = 'block';
-    cardDeck.innerHTML = '';
+    selectionAnimation.style.display = 'grid';
     startSelectionBtn.disabled = true;
 
-    teamMembers.forEach((name, index) => {
-      const card = document.createElement('div');
-      card.className = 'card-visual';
-      card.textContent = name;
-      card.style.zIndex = teamMembers.length - index;
-      cardDeck.appendChild(card);
-    });
-
-    setTimeout(() => shuffleCards(), 500);
-  }
-
-  function shuffleCards() {
-    const cards = Array.from(document.querySelectorAll('#cardDeck .card-visual'));
-    let i = 0;
-    const shuffles = cards.length * 2;
-
-    function shuffle() {
-      if (i >= shuffles) {
-        setTimeout(() => dealCards(cards), 500);
-        return;
-      }
-
-      const card = cards[i % cards.length];
-      const originalZIndex = card.style.zIndex;
-
-      card.style.zIndex = cards.length + 1;
-      card.style.transform = 'scale(1.1)';
-
-      setTimeout(() => {
-        card.style.zIndex = originalZIndex;
-        card.style.transform = 'scale(1)';
-        i++;
-        shuffle();
-      }, 100);
-    }
-    shuffle();
-  }
-
-  function dealCards(cards) {
     const shuffledMembers = [...teamMembers].sort(() => Math.random() - 0.5);
-    const winners = shuffledMembers.slice(0, 3);
+    const winners = shuffledMembers.slice(0, 4);
 
-    const winnerCards = winners.map(winner => cards.find(card => card.textContent === winner));
+    revealWinners(winners);
+  }
 
-    winnerCards.forEach((card, index) => {
-      setTimeout(() => {
-        card.style.transform = `translateX(${(index - 1) * 160}px) scale(1.1)`;
-        card.style.boxShadow = '0 10px 30px rgba(0, 150, 214, 0.4)';
-        card.style.zIndex = cards.length + 1;
-      }, index * 800);
-    });
-
-    cards.forEach(card => {
-      if (!winners.includes(card.textContent)) {
-        setTimeout(() => {
-          const randomX = (Math.random() - 0.5) * 1000;
-          const randomY = (Math.random() - 0.5) * 1000;
-          card.style.transform = `translateX(${randomX}px) translateY(${randomY}px) rotate(${randomX / 2}deg)`;
-          card.style.opacity = '0';
-        }, winnerCards.length * 800);
-      }
-    });
-
-    setTimeout(() => {
-      revealWinners(winners);
-    }, winnerCards.length * 800 + 500);
+  function playCelebrationSound() {
+    const sound = document.getElementById('celebrationSound');
+    sound.src = 'https://assets.mixkit.co/sfx/preview/mixkit-fireworks-bang-in-the-sky-2991.mp3';
+    sound.play();
   }
 
   function revealWinners(winners) {
     const winnerElements = [
+      document.getElementById('winner0'),
       document.getElementById('winner1'),
       document.getElementById('winner2'),
       document.getElementById('winner3')
     ];
 
-    winnerElements.forEach(el => el.textContent = '');
-    selectionAnimation.style.display = 'block';
+    winnerElements.forEach(el => {
+      el.textContent = '...';
+      el.parentElement.classList.remove('revealed');
+    });
+    selectionAnimation.style.display = 'grid';
+
+    const timings = [5000, 7000, 9000, 11000];
+    const shufflingIntervals = [];
+
+    winnerElements.forEach((el, index) => {
+      shufflingIntervals[index] = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * teamMembers.length);
+        el.textContent = teamMembers[randomIndex];
+      }, 100);
+    });
 
     winners.forEach((winner, index) => {
       setTimeout(() => {
+        clearInterval(shufflingIntervals[index]);
         winnerElements[index].textContent = winner;
-      }, (index + 1) * 800);
+        winnerElements[index].parentElement.classList.add('revealed');
+        playCelebrationSound();
+      }, timings[index]);
     });
 
     setTimeout(() => {
       selectionAnimation.scrollIntoView({ behavior: 'smooth' });
       startSelectionBtn.disabled = false;
-    }, winners.length * 800);
+    }, timings[timings.length - 1] + 1000);
   }
 
   // Events
