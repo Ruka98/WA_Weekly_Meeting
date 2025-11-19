@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>IWMI Water Accounting – Random Presenter Selector</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --iwmi-navy: #003b70;
+      --iwmi-blue: #0096d6;
+      --iwmi-teal: #00a6b5;
+      --iwmi-deep: #002b4f;
+
+      --light: #f8fbfd;
+      --white: #ffffff;
+      --gray: #f1f5f9;
+      --text: #1e293b;
+      --border: #e2e8f0;
+      --shadow-sm: 0 4px 15px rgba(0, 48, 135, 0.08);
+      --shadow-lg: 0 20px 40px rgba(0, 48, 135, 0.14);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(0,166,181,0.16) 0, transparent 55%),
+        radial-gradient(circle at 100% 100%, rgba(0,59,112,0.22) 0, transparent 55%),
+        #ffffff;
+      color: var(--text);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+      background: linear-gradient(135deg, #ffffff 0%, #f9feff 40%, #eef8fb 100%);
+      color: var(--iwmi-navy);
+      padding: 18px 40px 22px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+      position: relative;
+      z-index: 10;
+      overflow: hidden;
+    }
+
+    header::before,
+    header::after {
+      content: "";
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    header::before {
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle at 0 0, var(--iwmi-teal), var(--iwmi-blue));
+      top: -150px;
+      left: -80px;
+      opacity: 0.7;
+    }
+
+    header::after {
+      width: 420px;
+      height: 420px;
+      background: radial-gradient(circle at 100% 100%, var(--iwmi-deep), var(--iwmi-teal));
+      right: -260px;
+      bottom: -250px;
+      opacity: 0.75;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      position: relative;
+      z-index: 2;
+      flex-wrap: wrap;
+    }
+
+    .logo-left { height: 60px; }
+    .logo-right { height: 70px; }
+
+    .title-group h1 {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 4px;
+      color: var(--iwmi-navy);
+    }
+    .title-group p {
+      font-size: 15px;
+      opacity: 0.9;
+      font-weight: 500;
+      color: #1f3f66;
+    }
+
+    .header-dots {
+      position: absolute;
+      left: 0;
+      bottom: -6px;
+      width: 180px;
+      height: 60px;
+      background-image: radial-gradient(circle, rgba(0,150,214,0.7) 1px, transparent 1px);
+      background-size: 10px 10px;
+      opacity: 0.7;
+      z-index: 1;
+    }
+
+    /* LAYOUT */
+    .container {
+      max-width: 900px;
+      margin: 40px auto 60px;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.98);
+      border-radius: 22px;
+      padding: 28px 24px;
+      box-shadow: var(--shadow-lg);
+      margin-bottom: 26px;
+      border: 1px solid rgba(0,150,214,0.16);
+      backdrop-filter: blur(6px);
+    }
+
+    h2 {
+      font-size: 22px;
+      color: var(--iwmi-navy);
+      margin-bottom: 16px;
+      font-weight: 700;
+      position: relative;
+      padding-bottom: 10px;
+    }
+    h2::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 70px;
+      height: 4px;
+      background: linear-gradient(90deg, var(--iwmi-teal), var(--iwmi-blue));
+      border-radius: 999px;
+    }
+
+    p.desc {
+      color: #64748b;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      font-size: 14px;
+      font-family: 'Inter', system-ui, sans-serif;
+      line-height: 1.5;
+      resize: vertical;
+    }
+    textarea:focus {
+      outline: none;
+      border-color: var(--iwmi-blue);
+      box-shadow: 0 0 0 3px rgba(0,150,214,0.16);
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--iwmi-teal), var(--iwmi-blue));
+      color: #ffffff;
+      box-shadow: 0 8px 18px rgba(0,150,214,0.35);
+    }
+    .btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 24px rgba(0,150,214,0.45);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--iwmi-navy);
+      border: 2px solid var(--iwmi-navy);
+    }
+    .btn-outline:hover {
+      background: var(--iwmi-navy);
+      color: #ffffff;
+    }
+
+    .btn-danger {
+      background: transparent;
+      color: #ef4444;
+      border: 2px solid #fca5a5;
+    }
+    .btn-danger:hover {
+      background: #fef2f2;
+      border-color: #ef4444;
+    }
+
+    .count {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #64748b;
+    }
+
+    /* Selection area */
+    .selection-area {
+      text-align: center;
+      padding: 30px 10px 10px;
+    }
+
+    .start-btn {
+      background: linear-gradient(135deg, var(--iwmi-deep), var(--iwmi-blue));
+      color: white;
+      font-size: 20px;
+      font-weight: 700;
+      padding: 16px 40px;
+      border-radius: 18px;
+      box-shadow: 0 20px 40px rgba(0,43,79,0.45);
+      transition: all 0.3s;
+      border: none;
+      margin-bottom: 18px;
+    }
+    .start-btn:hover {
+      transform: translateY(-4px) scale(1.01);
+      box-shadow: 0 26px 50px rgba(0,43,79,0.55);
+    }
+    .start-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .shuffle-container {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px 0 12px;
+    }
+
+    .shuffle-card {
+      background: #ffffff;
+      padding: 12px 16px;
+      border-radius: 14px;
+      box-shadow: var(--shadow-sm);
+      min-width: 120px;
+      text-align: center;
+      font-weight: 600;
+      color: var(--iwmi-navy);
+      border: 2px solid rgba(0,150,214,0.18);
+      transition: all 0.25s ease;
+      font-size: 14px;
+    }
+
+    .shuffle-card.active {
+      border-color: var(--iwmi-blue);
+      box-shadow: 0 8px 25px rgba(0,150,214,0.3);
+      transform: scale(1.05);
+    }
+
+    .countdown {
+      font-size: 32px;
+      font-weight: 800;
+      color: var(--iwmi-blue);
+      margin-bottom: 6px;
+    }
+
+    .selection-animation {
+      margin: 20px auto 0;
+      max-width: 700px;
+      display: none;
+    }
+
+    .winner-card {
+      background: #ffffff;
+      padding: 18px 18px 20px;
+      border-radius: 18px;
+      box-shadow: var(--shadow-lg);
+      margin: 14px auto;
+      border-top: 5px solid var(--iwmi-blue);
+      text-align: center;
+    }
+
+    .role-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--iwmi-teal), var(--iwmi-blue));
+      color: white;
+      padding: 6px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .winner-name {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--iwmi-navy);
+      margin-top: 4px;
+    }
+
+    .notification {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--iwmi-deep);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 999px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s;
+      font-size: 13px;
+      font-weight: 500;
+      pointer-events: none;
+    }
+    .notification.show {
+      opacity: 1;
+      bottom: 32px;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-dots"></div>
+  <div class="header-inner">
+    <img src="assets/iwmi.png" alt="IWMI Logo" class="logo-left">
+    <div class="title-group">
+      <h1>IWMI Water Accounting</h1>
+      <p>Random Presenter Selector – Weekly Meeting</p>
+    </div>
+    <img src="assets/siwa.png" alt="SIWA+ Logo" class="logo-right">
+  </div>
+</header>
+
+<div class="container">
+  <!-- Team Editor Box ONLY -->
+  <div class="card">
+    <h2>Team List Editor</h2>
+    <p class="desc">
+      Type all team members here, <strong>one name per line</strong>.  
+      Data is saved in your browser (local “db”) on this device.
+    </p>
+
+    <textarea id="teamTextBox" placeholder="Example:
+Alice
+Bob
+Charlie"></textarea>
+
+    <div class="button-row">
+      <button id="teamSaveBtn" class="btn btn-primary">Save / Update Team</button>
+      <button id="teamSortBtn" class="btn btn-outline">Sort A–Z</button>
+      <button id="teamClearBtn" class="btn btn-danger">Clear All</button>
+    </div>
+
+    <p id="teamCount" class="count">0 names</p>
+  </div>
+
+  <!-- Random selection -->
+  <div class="card selection-area">
+    <h2>Random Presenter Selection</h2>
+    <p class="desc" style="font-size:15px; max-width:520px; margin:0 auto 16px;">
+      Picks 3 random people from the list above for:<br>
+      Serious Presentation • Semi-Serious • New Tool / Paper Demo
+    </p>
+
+    <button class="start-btn" id="startSelectionBtn">
+      Start Selection
+    </button>
+
+    <div id="shuffleAnimation" style="display:none;">
+      <div class="countdown" id="countdown">5</div>
+      <div class="shuffle-container" id="shuffleContainer"></div>
+    </div>
+
+    <div id="selectionAnimation" class="selection-animation">
+      <div class="winner-card">
+        <div class="role-badge">Serious Presentation</div>
+        <div class="winner-name" id="winner1">...</div>
+      </div>
+      <div class="winner-card">
+        <div class="role-badge">Semi-Serious Presentation</div>
+        <div class="winner-name" id="winner2">...</div>
+      </div>
+      <div class="winner-card">
+        <div class="role-badge">New Tool / Paper Demo</div>
+        <div class="winner-name" id="winner3">...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="notification" id="notification"></div>
+
+<script>
+  const STORAGE_KEY = 'iwmi_team_members';
+  let teamMembers = [];
+
+  const teamTextBox        = document.getElementById('teamTextBox');
+  const teamSaveBtn        = document.getElementById('teamSaveBtn');
+  const teamSortBtn        = document.getElementById('teamSortBtn');
+  const teamClearBtn       = document.getElementById('teamClearBtn');
+  const teamCount          = document.getElementById('teamCount');
+
+  const startSelectionBtn  = document.getElementById('startSelectionBtn');
+  const shuffleAnimation   = document.getElementById('shuffleAnimation');
+  const shuffleContainer   = document.getElementById('shuffleContainer');
+  const countdownElement   = document.getElementById('countdown');
+  const selectionAnimation = document.getElementById('selectionAnimation');
+
+  const notification       = document.getElementById('notification');
+
+  function notify(msg) {
+    notification.textContent = msg;
+    notification.classList.add('show');
+    setTimeout(() => notification.classList.remove('show'), 2000);
+  }
+
+  function getLinesFromTextBox() {
+    return teamTextBox.value
+      .split('\n')
+      .map(x => x.trim())
+      .filter(x => x.length > 0);
+  }
+
+  function syncTextBoxFromTeam() {
+    teamTextBox.value = teamMembers.join('\n');
+  }
+
+  function updateCount() {
+    const n = teamMembers.length;
+    teamCount.textContent = n === 1 ? '1 name' : `${n} names`;
+    startSelectionBtn.disabled = n < 3;
+  }
+
+  function saveTeam() {
+    const lines = getLinesFromTextBox();
+
+    // remove duplicates (case-insensitive)
+    const seen = new Set();
+    const cleaned = [];
+    for (const name of lines) {
+      const key = name.toLowerCase();
+      if (!seen.has(key)) {
+        seen.add(key);
+        cleaned.push(name);
+      }
+    }
+
+    teamMembers = cleaned;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(teamMembers));
+    syncTextBoxFromTeam();
+    updateCount();
+    notify('Team saved');
+  }
+
+  function sortTeam() {
+    if (!teamTextBox.value.trim() && !teamMembers.length) {
+      notify('No names to sort');
+      return;
+    }
+
+    // Always base on current text
+    saveTeam();
+    teamMembers.sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(teamMembers));
+    syncTextBoxFromTeam();
+    updateCount();
+    notify('Sorted A–Z');
+  }
+
+  function clearTeam() {
+    if (!teamTextBox.value.trim() && !teamMembers.length) return;
+    if (!confirm('Clear all names?')) return;
+    teamMembers = [];
+    localStorage.removeItem(STORAGE_KEY);
+    teamTextBox.value = '';
+    updateCount();
+    notify('Cleared');
+  }
+
+  function loadFromLocalDb() {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      try {
+        const arr = JSON.parse(stored);
+        if (Array.isArray(arr)) {
+          teamMembers = arr;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    syncTextBoxFromTeam();
+    updateCount();
+  }
+
+  function startSelection() {
+    // Make sure we always use what’s currently in the box
+    saveTeam();
+
+    if (teamMembers.length < 3) {
+      notify('Need at least 3 names');
+      return;
+    }
+
+    // Reset UI
+    selectionAnimation.style.display = 'none';
+    shuffleAnimation.style.display = 'block';
+    shuffleContainer.innerHTML = '';
+    startSelectionBtn.disabled = true;
+    countdownElement.textContent = '5';
+
+    // Create cards
+    teamMembers.forEach(name => {
+      const card = document.createElement('div');
+      card.className = 'shuffle-card';
+      card.textContent = name;
+      shuffleContainer.appendChild(card);
+    });
+
+    const cards = document.querySelectorAll('.shuffle-card');
+
+    let countdown = 5;
+    let shuffleInterval;
+
+    const countdownInterval = setInterval(() => {
+      countdown--;
+      countdownElement.textContent = countdown;
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+      }
+    }, 1000);
+
+    shuffleInterval = setInterval(() => {
+      cards.forEach(card => card.classList.remove('active'));
+
+      const indices = [];
+      while (indices.length < Math.min(3, cards.length)) {
+        const r = Math.floor(Math.random() * cards.length);
+        if (!indices.includes(r)) indices.push(r);
+      }
+      indices.forEach(i => cards[i].classList.add('active'));
+    }, 150);
+
+    setTimeout(() => {
+      clearInterval(shuffleInterval);
+      shuffleAnimation.style.display = 'none';
+      revealWinners();
+    }, 5000);
+  }
+
+  function revealWinners() {
+    const shuffled = [...teamMembers].sort(() => Math.random() - 0.5);
+    const winners = shuffled.slice(0, 3);
+
+    document.getElementById('winner1').textContent = winners[0];
+    document.getElementById('winner2').textContent = winners[1];
+    document.getElementById('winner3').textContent = winners[2];
+
+    selectionAnimation.style.display = 'block';
+    selectionAnimation.scrollIntoView({ behavior: 'smooth' });
+
+    startSelectionBtn.disabled = false;
+  }
+
+  // Events
+  teamSaveBtn.addEventListener('click', saveTeam);
+  teamSortBtn.addEventListener('click', sortTeam);
+  teamClearBtn.addEventListener('click', clearTeam);
+
+  teamTextBox.addEventListener('input', () => {
+    // live count based on current textarea, without saving
+    const n = getLinesFromTextBox().length;
+    teamCount.textContent = n === 1 ? '1 name' : `${n} names`;
+    startSelectionBtn.disabled = n < 3;
+  });
+
+  startSelectionBtn.addEventListener('click', startSelection);
+
+  // Init
+  loadFromLocalDb();
+</script>
+</body>
+</html>
