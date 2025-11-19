@@ -257,45 +257,28 @@
       box-shadow: none;
     }
 
-    .shuffle-container {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin: 20px 0 12px;
-    }
-
-    .shuffle-card {
-      background: #ffffff;
-      padding: 12px 16px;
-      border-radius: 14px;
-      box-shadow: var(--shadow-sm);
-      min-width: 120px;
-      text-align: center;
-      font-weight: 600;
-      color: var(--iwmi-navy);
-      border: 2px solid rgba(0,150,214,0.18);
-      transition: all 0.25s ease;
-      font-size: 14px;
-    }
-
-    .shuffle-card.active {
-      border-color: var(--iwmi-blue);
-      box-shadow: 0 8px 25px rgba(0,150,214,0.3);
-      transform: scale(1.05);
-    }
-
-    .countdown {
-      font-size: 32px;
-      font-weight: 800;
-      color: var(--iwmi-blue);
-      margin-bottom: 6px;
-    }
 
     .selection-animation {
       margin: 20px auto 0;
       max-width: 700px;
       display: none;
+    }
+
+    #cardDeck .card-visual {
+      position: absolute;
+      width: 150px;
+      height: 210px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f5f7fa, #e0e8ef);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border: 1px solid #d1d9e6;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--iwmi-navy);
+      transition: transform 0.6s, box-shadow 0.3s, opacity 0.6s;
     }
 
     .winner-card {
@@ -398,9 +381,8 @@ Charlie"></textarea>
       Start Selection
     </button>
 
-    <div id="shuffleAnimation" style="display:none;">
-      <div class="countdown" id="countdown">5</div>
-      <div class="shuffle-container" id="shuffleContainer"></div>
+    <div id="cardDeckAnimation" style="display: none; margin-bottom: 20px;">
+      <div id="cardDeck" style="position: relative; width: 150px; height: 210px; margin: 0 auto;"></div>
     </div>
 
     <div id="selectionAnimation" class="selection-animation">
@@ -433,9 +415,8 @@ Charlie"></textarea>
   const teamCount          = document.getElementById('teamCount');
 
   const startSelectionBtn  = document.getElementById('startSelectionBtn');
-  const shuffleAnimation   = document.getElementById('shuffleAnimation');
-  const shuffleContainer   = document.getElementById('shuffleContainer');
-  const countdownElement   = document.getElementById('countdown');
+  const cardDeckAnimation  = document.getElementById('cardDeckAnimation');
+  const cardDeck           = document.getElementById('cardDeck');
   const selectionAnimation = document.getElementById('selectionAnimation');
 
   const notification       = document.getElementById('notification');
@@ -526,72 +507,105 @@ Charlie"></textarea>
   }
 
   function startSelection() {
-    // Make sure we always use what’s currently in the box
     saveTeam();
-
     if (teamMembers.length < 3) {
       notify('Need at least 3 names');
       return;
     }
 
-    // Reset UI
     selectionAnimation.style.display = 'none';
-    shuffleAnimation.style.display = 'block';
-    shuffleContainer.innerHTML = '';
+    cardDeckAnimation.style.display = 'block';
+    cardDeck.innerHTML = '';
     startSelectionBtn.disabled = true;
-    countdownElement.textContent = '5';
 
-    // Create cards
-    teamMembers.forEach(name => {
+    teamMembers.forEach((name, index) => {
       const card = document.createElement('div');
-      card.className = 'shuffle-card';
+      card.className = 'card-visual';
       card.textContent = name;
-      shuffleContainer.appendChild(card);
+      card.style.zIndex = teamMembers.length - index;
+      cardDeck.appendChild(card);
     });
 
-    const cards = document.querySelectorAll('.shuffle-card');
-
-    let countdown = 5;
-    let shuffleInterval;
-
-    const countdownInterval = setInterval(() => {
-      countdown--;
-      countdownElement.textContent = countdown;
-      if (countdown <= 0) {
-        clearInterval(countdownInterval);
-      }
-    }, 1000);
-
-    shuffleInterval = setInterval(() => {
-      cards.forEach(card => card.classList.remove('active'));
-
-      const indices = [];
-      while (indices.length < Math.min(3, cards.length)) {
-        const r = Math.floor(Math.random() * cards.length);
-        if (!indices.includes(r)) indices.push(r);
-      }
-      indices.forEach(i => cards[i].classList.add('active'));
-    }, 150);
-
-    setTimeout(() => {
-      clearInterval(shuffleInterval);
-      shuffleAnimation.style.display = 'none';
-      revealWinners();
-    }, 5000);
+    setTimeout(() => shuffleCards(), 500);
   }
 
-  function revealWinners() {
-    const shuffled = [...teamMembers].sort(() => Math.random() - 0.5);
-    const winners = shuffled.slice(0, 3);
+  function shuffleCards() {
+    const cards = Array.from(document.querySelectorAll('#cardDeck .card-visual'));
+    let i = 0;
+    const shuffles = cards.length * 2;
 
-    document.getElementById('winner1').textContent = winners[0];
-    document.getElementById('winner2').textContent = winners[1];
-    document.getElementById('winner3').textContent = winners[2];
+    function shuffle() {
+      if (i >= shuffles) {
+        setTimeout(() => dealCards(cards), 500);
+        return;
+      }
 
+      const card = cards[i % cards.length];
+      const originalZIndex = card.style.zIndex;
+
+      card.style.zIndex = cards.length + 1;
+      card.style.transform = 'scale(1.1)';
+
+      setTimeout(() => {
+        card.style.zIndex = originalZIndex;
+        card.style.transform = 'scale(1)';
+        i++;
+        shuffle();
+      }, 100);
+    }
+    shuffle();
+  }
+
+  function dealCards(cards) {
+    const shuffledMembers = [...teamMembers].sort(() => Math.random() - 0.5);
+    const winners = shuffledMembers.slice(0, 3);
+
+    const winnerCards = winners.map(winner => cards.find(card => card.textContent === winner));
+
+    winnerCards.forEach((card, index) => {
+      setTimeout(() => {
+        card.style.transform = `translateX(${(index - 1) * 160}px) scale(1.1)`;
+        card.style.boxShadow = '0 10px 30px rgba(0, 150, 214, 0.4)';
+        card.style.zIndex = cards.length + 1;
+      }, index * 800);
+    });
+
+    cards.forEach(card => {
+      if (!winners.includes(card.textContent)) {
+        setTimeout(() => {
+          const randomX = (Math.random() - 0.5) * 1000;
+          const randomY = (Math.random() - 0.5) * 1000;
+          card.style.transform = `translateX(${randomX}px) translateY(${randomY}px) rotate(${randomX / 2}deg)`;
+          card.style.opacity = '0';
+        }, winnerCards.length * 800);
+      }
+    });
+
+    setTimeout(() => {
+      revealWinners(winners);
+    }, winnerCards.length * 800 + 500);
+  }
+
+  function revealWinners(winners) {
+    const winnerElements = [
+      document.getElementById('winner1'),
+      document.getElementById('winner2'),
+      document.getElementById('winner3')
+    ];
+
+    winnerElements.forEach(el => el.textContent = '');
     selectionAnimation.style.display = 'block';
-    selectionAnimation.scrollIntoView({ behavior: 'smooth' });
 
-    startSelectionBtn.disabled = false;
+    winners.forEach((winner, index) => {
+      setTimeout(() => {
+        winnerElements[index].textContent = winner;
+      }, (index + 1) * 800);
+    });
+
+    setTimeout(() => {
+      selectionAnimation.scrollIntoView({ behavior: 'smooth' });
+      startSelectionBtn.disabled = false;
+    }, winners.length * 800);
   }
 
   // Events
