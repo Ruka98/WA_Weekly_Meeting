@@ -381,8 +381,8 @@ Charlie"></textarea>
       Start Selection
     </button>
 
-    <div id="cardDeckAnimation" style="display: none; perspective: 1000px; margin-bottom: 20px;">
-      <div id="cardDeck" style="position: relative; width: 150px; height: 210px; margin: 0 auto; transform-style: preserve-3d; transition: transform 0.5s;"></div>
+    <div id="cardDeckAnimation" style="display: none; margin-bottom: 20px;">
+      <div id="cardDeck" style="position: relative; width: 150px; height: 210px; margin: 0 auto;"></div>
     </div>
 
     <div id="selectionAnimation" class="selection-animation">
@@ -523,7 +523,6 @@ Charlie"></textarea>
       card.className = 'card-visual';
       card.textContent = name;
       card.style.zIndex = teamMembers.length - index;
-      card.style.transform = `translateZ(-${index * 2}px)`;
       cardDeck.appendChild(card);
     });
 
@@ -532,54 +531,81 @@ Charlie"></textarea>
 
   function shuffleCards() {
     const cards = Array.from(document.querySelectorAll('#cardDeck .card-visual'));
-    let angle = 0;
-    const shuffleInterval = setInterval(() => {
-      angle += 20;
-      cardDeck.style.transform = `rotateY(${angle}deg) rotateZ(${angle / 5}deg)`;
-    }, 50);
+    let i = 0;
+    const shuffles = cards.length * 2;
 
-    setTimeout(() => {
-      clearInterval(shuffleInterval);
-      cardDeck.style.transform = 'rotateY(0deg) rotateZ(0deg)';
-      setTimeout(() => dealCards(cards), 500);
-    }, 2500);
+    function shuffle() {
+      if (i >= shuffles) {
+        setTimeout(() => dealCards(cards), 500);
+        return;
+      }
+
+      const card = cards[i % cards.length];
+      const originalZIndex = card.style.zIndex;
+
+      card.style.zIndex = cards.length + 1;
+      card.style.transform = 'scale(1.1)';
+
+      setTimeout(() => {
+        card.style.zIndex = originalZIndex;
+        card.style.transform = 'scale(1)';
+        i++;
+        shuffle();
+      }, 100);
+    }
+    shuffle();
   }
 
   function dealCards(cards) {
     const shuffledMembers = [...teamMembers].sort(() => Math.random() - 0.5);
     const winners = shuffledMembers.slice(0, 3);
 
-    const winnerIndices = winners.map(winner => teamMembers.indexOf(winner));
+    const winnerCards = winners.map(winner => cards.find(card => card.textContent === winner));
 
-    cards.forEach((card, index) => {
+    winnerCards.forEach((card, index) => {
       setTimeout(() => {
-        const isWinner = winners.includes(card.textContent);
-        if (isWinner) {
-          card.style.transform = `translateX(${(winnerIndices.indexOf(index) - 1) * 160}px) scale(1.1)`;
-          card.style.boxShadow = '0 10px 30px rgba(0, 150, 214, 0.4)';
-        } else {
+        card.style.transform = `translateX(${(index - 1) * 160}px) scale(1.1)`;
+        card.style.boxShadow = '0 10px 30px rgba(0, 150, 214, 0.4)';
+        card.style.zIndex = cards.length + 1;
+      }, index * 800);
+    });
+
+    cards.forEach(card => {
+      if (!winners.includes(card.textContent)) {
+        setTimeout(() => {
           const randomX = (Math.random() - 0.5) * 1000;
           const randomY = (Math.random() - 0.5) * 1000;
           card.style.transform = `translateX(${randomX}px) translateY(${randomY}px) rotate(${randomX / 2}deg)`;
           card.style.opacity = '0';
-        }
-      }, index * 150);
+        }, winnerCards.length * 800);
+      }
     });
 
     setTimeout(() => {
       revealWinners(winners);
-    }, cards.length * 150 + 500);
+    }, winnerCards.length * 800 + 500);
   }
 
   function revealWinners(winners) {
-    document.getElementById('winner1').textContent = winners[0];
-    document.getElementById('winner2').textContent = winners[1];
-    document.getElementById('winner3').textContent = winners[2];
+    const winnerElements = [
+      document.getElementById('winner1'),
+      document.getElementById('winner2'),
+      document.getElementById('winner3')
+    ];
 
+    winnerElements.forEach(el => el.textContent = '');
     selectionAnimation.style.display = 'block';
-    selectionAnimation.scrollIntoView({ behavior: 'smooth' });
 
-    startSelectionBtn.disabled = false;
+    winners.forEach((winner, index) => {
+      setTimeout(() => {
+        winnerElements[index].textContent = winner;
+      }, (index + 1) * 800);
+    });
+
+    setTimeout(() => {
+      selectionAnimation.scrollIntoView({ behavior: 'smooth' });
+      startSelectionBtn.disabled = false;
+    }, winners.length * 800);
   }
 
   // Events
